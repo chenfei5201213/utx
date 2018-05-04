@@ -35,6 +35,7 @@ import time
 from . import log
 import datetime
 import io
+import os
 import sys
 import unittest
 from xml.sax import saxutils
@@ -42,6 +43,7 @@ from xml.sax import saxutils
 __author__ = "Wai Yip Tung && Eason Han"
 __version__ = "0.8.4"
 
+template_path = os.path.join(os.path.dirname(__file__), "template.html")
 result_data = {}
 result_data['testResult'] = []
 current_class_name = ""
@@ -483,13 +485,14 @@ class _TestResult(unittest.TestResult):
 
 
 class BSTestRunner(Template_mixin):
-    def __init__(self, title, stream=sys.stdout, verbosity=1, description=""):
+    def __init__(self, title, report_file, stream=sys.stdout, verbosity=1, description=""):
         self.stream = stream
         self.verbosity = verbosity
         self.title = title
         self.description = description
         self.start_time = datetime.datetime.now()
         self.stop_time = None
+        self.report_file = report_file
 
     def run(self, test):
         log.info("开始进行测试")
@@ -499,13 +502,16 @@ class BSTestRunner(Template_mixin):
         self.generateReport(result)
         log.info('Time Elapsed: {}'.format(self.stop_time - self.start_time))
 
-        file = r"report\ztest-style-{}.html".format(
-            time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime(time.time())))
-        shutil.copy2(r"..\utx\template.html", file)
-        with open(file, "r+", encoding='utf-8') as f:
+        # file = r"report/ztest-style-{}.html".format(
+        #     time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime(time.time())))
+        # shutil.copy2(r"../utx/template.html", self.report_file)
+        shutil.copy2(template_path, self.report_file)
+        with open(self.report_file, "r+", encoding='utf-8') as f:
             content = f.read().replace(r"${resultData}", json.dumps(result_data, ensure_ascii=False, indent=4))
             f.seek(0)
             f.write(content)
+        # content = f.read().replace(r"${resultData}", json.dumps(result_data, ensure_ascii=False, indent=4))
+        # self.stream.write(content)
         return result
 
     def sort_result(self, case_results):
@@ -558,7 +564,7 @@ class BSTestRunner(Template_mixin):
             stylesheet=stylesheet,
             heading=heading,
             report=report)
-        self.stream.write(output.encode('utf8'))
+        # self.stream.write(output.encode('utf8'))      # 取消bstest-style风格报告
 
     def _generate_stylesheet(self):
         return self.STYLESHEET_TMPL
@@ -640,7 +646,10 @@ class BSTestRunner(Template_mixin):
             case_tr_id = "ft{}.{}".format(class_id + 1, case_id + 1)
         if n == 3:
             case_tr_id = "st{}.{}".format(class_id + 1, case_id + 1)
-        name = t.id().split('.')[-1]
+        if len(t.id().split(".")) >= 3:
+            name = t.id().split('.')[2]
+        else:
+            name = t.id().split('.')[-1]
         doc = t.shortDescription() or ""
         desc = doc and ('%s: %s' % (name, doc)) or name
         tmpl_pass = has_output and self.REPORT_TEST_WITH_OUTPUT_TMPL_PASS or self.REPORT_TEST_NO_OUTPUT_TMPL

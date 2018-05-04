@@ -3,20 +3,32 @@
 import os
 import time
 import unittest
+import platform
 from utx.BSTestRunner import BSTestRunner
 
 
 class TestRunner:
-    def run_test(self, path="testcase", title='接口自动化测试报告'):
-        if not os.path.exists("report"):
-            os.mkdir("report")
+    def __init__(self, title, case_path='testcase', report_path='report'):
+        self.title = title
+        self.case_path = case_path
+        self.report_path = report_path
 
-        report_file = r"report\bstest-style-{}.html".format(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime(time.time())))
+    def run_test(self, suite=None):
+        if not os.path.exists(self.report_path):
+            os.mkdir(self.report_path)
+        report_file = os.path.join(self.report_path, "index.html")
+        if os.path.exists(report_file):
+            report_file_name_new = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime(os.path.getctime(report_file)))
+            os.rename(report_file, os.path.join(self.report_path, report_file_name_new + '.html'))
+        if not suite:
+            suite = unittest.TestLoader().discover(self.case_path)
 
-        suite = unittest.TestLoader().discover(path)
-        with open(report_file, "wb") as f:
-            runner = BSTestRunner(stream=f, title=title)
-            runner.run(suite)
+        # with open(report_file, "wb") as f:            # 取消bstest-style风格报告
+        #     runner = BSTestRunner(stream=f, title=self.title)
+        #     runner.run(suite)
 
-        print("测试完成，请查看报告")
-        os.system("start report")
+        runner = BSTestRunner(self.title, report_file)
+        runner.run(suite)
+        if "winodws" in platform.system().lower():
+            print("测试完成，请查看报告")
+            os.system("start report")

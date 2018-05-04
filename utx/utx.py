@@ -85,11 +85,16 @@ class Tool:
             if isinstance(test_data, list):
 
                 func_name += "_{:05d}_{}".format(index, "_".join([str(_) for _ in test_data]))
-                result[func_name] = _handler(_feed_data(*test_data)(raw_func))
+                # result[func_name] = _handler(_feed_data(*test_data)(raw_func))
+                result[func_name] = _handler(_feed_data(test_data)(raw_func))       # add chenfei at 2017-11-26
 
             elif isinstance(test_data, dict):
-                func_name += "_{:05d}_{}".format(index, "_".join([str(_) for _ in test_data.values()]))
-                result[func_name] = _handler(_feed_data(**test_data)(raw_func))
+                if test_data.get("case_name"):
+                    func_name += "_{:05d}_{}".format(index, test_data.get("case_name"))
+                else:
+                    func_name += "_{:05d}".format(index)
+                # result[func_name] = _handler(_feed_data(**test_data)(raw_func))
+                result[func_name] = _handler(_feed_data(test_data)(raw_func))       # add chenfei at 2017-11-26
 
             elif isinstance(test_data, (int, str, bool, float)):
                 func_name += "_{:05d}_{}".format(index, test_data)
